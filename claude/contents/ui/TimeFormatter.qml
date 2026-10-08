@@ -1,3 +1,4 @@
+// Shared file: edit shared/contents/ui/TimeFormatter.qml, then run `./sync-shared.sh`.
 pragma Singleton
 import QtQuick
 

@@ -1,3 +1,4 @@
+// Shared file: edit shared/contents/ui/UsageBar.qml, then run `./sync-shared.sh`.
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents

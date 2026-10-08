@@ -2,4 +2,5 @@
 *.pyc
 *.tmp
 .*/
+!.github/
 .DS_Store

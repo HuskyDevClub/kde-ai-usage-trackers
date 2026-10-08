@@ -29,6 +29,17 @@ To install from a clone instead, run `install.sh` inside the widget's folder. Se
 
 Each top-level widget folder (`claude/`, `antigravity/`) is a self-contained Plasma applet package — `metadata.json`, `contents/`, and its own `install.sh` / `uninstall.sh`.
 
+Files the widgets have in common live once in [`shared/`](shared/), laid out like a widget folder, and `./sync-shared.sh` copies them into each widget. Always edit the copy in `shared/`: `./sync-shared.sh --check` and CI fail if a widget's copy drifts from it.
+
+## Development
+
+| Command | What it does |
+|---|---|
+| `./sync-shared.sh` | Copy `shared/` (and `LICENSE`) into every widget folder |
+| `./sync-shared.sh --check` | Verify every widget's shared copies match `shared/` |
+| `ruff check .` | Lint the Python code |
+| `plasmoidviewer -a claude` | Preview a widget straight from its folder — needs `plasma-sdk` |
+
 ## Contributing
 
 Contributions are welcome! Whether it's bug reports, feature requests, or pull requests — every bit helps.

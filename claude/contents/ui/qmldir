@@ -1,2 +1,3 @@
+# Shared file: edit shared/contents/ui/qmldir, then run `./sync-shared.sh`.
 singleton Constants 1.0 Constants.qml
 singleton TimeFormatter 1.0 TimeFormatter.qml

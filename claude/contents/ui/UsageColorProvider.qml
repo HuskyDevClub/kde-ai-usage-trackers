@@ -1,13 +1,20 @@
+// Shared file: edit shared/contents/ui/UsageColorProvider.qml, then run `./sync-shared.sh`.
 import QtQuick
-import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
+import org.kde.kirigami as Kirigami
 
-Item {
+QtObject {
     id: colorProvider
-    visible: false
 
-    property bool useCustom: Plasmoid.configuration.useCustomColors
-    property color normalColor: useCustom ? Plasmoid.configuration.normalColor : Kirigami.Theme.positiveTextColor
-    property color warningColor: useCustom ? Plasmoid.configuration.warningColor : Kirigami.Theme.neutralTextColor
-    property color criticalColor: useCustom ? Plasmoid.configuration.criticalColor : Kirigami.Theme.negativeTextColor
+    readonly property color normalColor: Plasmoid.configuration.useCustomColors
+        ? (Plasmoid.configuration.normalColor || "#27ae60")
+        : Kirigami.Theme.positiveTextColor
+
+    readonly property color warningColor: Plasmoid.configuration.useCustomColors
+        ? (Plasmoid.configuration.warningColor || "#f39c12")
+        : Kirigami.Theme.neutralTextColor
+
+    readonly property color criticalColor: Plasmoid.configuration.useCustomColors
+        ? (Plasmoid.configuration.criticalColor || "#e74c3c")
+        : Kirigami.Theme.negativeTextColor
 }
