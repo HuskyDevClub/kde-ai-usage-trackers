@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="refreshIntervalMinutes" type="Int">
+            <label>Refresh interval in minutes</label>
+            <default>5</default>
+            <min>1</min>
+            <max>60</max>
+        </entry>
+        <entry name="useCustomColors" type="Bool">
+            <label>Use custom colors instead of theme colors</label>
+            <default>false</default>
+        </entry>
+        <entry name="normalColor" type="String">
+            <label>Color for normal usage level</label>
+            <default>#27ae60</default>
+        </entry>
+        <entry name="warningColor" type="String">
+            <label>Color for warning usage level</label>
+            <default>#f39c12</default>
+        </entry>
+        <entry name="criticalColor" type="String">
+            <label>Color for critical usage level</label>
+            <default>#e74c3c</default>
+        </entry>
+    </group>
+</kcfg>

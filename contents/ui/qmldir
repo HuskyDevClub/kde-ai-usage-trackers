@@ -1,0 +1,2 @@
+singleton Constants 1.0 Constants.qml
+singleton TimeFormatter 1.0 TimeFormatter.qml

@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Wynter Lin"
+            }
+        ],
+        "BugReportUrl": "https://github.com/HuskyDevClub/antigravity-usage-kde-tracker/issues",
+        "Category": "Utilities",
+        "Description": "Track your Google Antigravity (agy) AI usage limits and quotas",
+        "FormFactors": [
+            "desktop"
+        ],
+        "Icon": "google",
+        "Id": "com.github.huskydevclub.antigravity-usage-kde-tracker",
+        "License": "GPL-3.0",
+        "Name": "Antigravity Usage Tracker",
+        "Version": "1.0.0",
+        "Website": "https://github.com/HuskyDevClub/antigravity-usage-kde-tracker"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
