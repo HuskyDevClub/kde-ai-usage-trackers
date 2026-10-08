@@ -20,11 +20,17 @@ A KDE Plasma 6 widget that displays your Google Antigravity (`agy`) AI usage lim
 
 ## Installation
 
-Clone the repository and run the install script:
+Just copy and paste this single line into your terminal:
 
 ```bash
-git clone https://github.com/HuskyDevClub/antigravity-usage-kde-tracker.git
-cd antigravity-usage-kde-tracker
+curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash -s antigravity
+```
+
+Or from a clone:
+
+```bash
+git clone https://github.com/HuskyDevClub/kde-ai-usage-trackers.git
+cd kde-ai-usage-trackers/antigravity
 bash install.sh
 ```
 
@@ -33,7 +39,7 @@ Then right-click your panel, select **Add Widgets**, and search for **Antigravit
 ## Uninstallation
 
 ```bash
-bash uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/antigravity/uninstall.sh | bash
 ```
 
 ## Configuration

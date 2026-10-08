@@ -3,7 +3,7 @@
 # Prints a JSON result on stdout so the QML frontend can parse it.
 set -uo pipefail
 
-REPO="HuskyDevClub/claude-usage-kde-tracker"
+REPO="HuskyDevClub/kde-ai-usage-trackers"
 WIDGET_ID="com.github.huskydevclub.claude-usage-kde-tracker"
 TAG="${1:-}"
 

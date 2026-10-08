@@ -6,7 +6,7 @@
                 "Name": "Wynter Lin"
             }
         ],
-        "BugReportUrl": "https://github.com/HuskyDevClub/claude-usage-kde-tracker/issues",
+        "BugReportUrl": "https://github.com/HuskyDevClub/kde-ai-usage-trackers/issues",
         "Category": "Utilities",
         "Description": "Track your Claude AI usage limits and quotas",
         "FormFactors": [
@@ -17,7 +17,7 @@
         "License": "GPL-3.0",
         "Name": "Claude Usage Tracker",
         "Version": "26.3",
-        "Website": "https://github.com/HuskyDevClub/claude-usage-kde-tracker"
+        "Website": "https://github.com/HuskyDevClub/kde-ai-usage-trackers"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }

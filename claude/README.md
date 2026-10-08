@@ -29,7 +29,7 @@ A KDE Plasma 6 widget that displays your Claude AI usage limits and quotas direc
 Just copy and paste this single line into your terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/claude-usage-kde-tracker/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash
 ```
 
 Then right-click your panel, select **Add Widgets**, and search for **Claude**.
@@ -58,13 +58,13 @@ python3 ~/.local/share/plasma/plasmoids/com.github.huskydevclub.claude-usage-kde
 To update manually instead, re-run the install command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/claude-usage-kde-tracker/main/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash
 ```
 
 ## Uninstallation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/claude-usage-kde-tracker/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/claude/uninstall.sh | bash
 ```
 
 ## Configuration
@@ -89,20 +89,7 @@ Update checks ([check_update.py](contents/code/check_update.py)) compare the `Ve
 
 ## Contributing
 
-Contributions are welcome! Whether it's bug reports, feature requests, or pull requests — every bit helps make this the best Claude usage tracker for KDE Plasma.
-
-Here are some ways you can help:
-
-- **Report bugs** — Open an [issue](https://github.com/HuskyDevClub/claude-usage-kde-tracker/issues) if something isn't working right
-- **Suggest features** — Have an idea for a useful addition? Let us know
-- **Submit pull requests** — Code improvements, UI tweaks, and documentation fixes are all appreciated
-- **Share feedback** — Let us know how you use the widget and what could be better
-
-If you'd like to contribute code, fork the repo, create a branch, and open a PR. There are no strict contribution guidelines — just keep changes focused and test before submitting.
-
-### Releasing
-
-The in-widget update check compares `metadata.json` to the latest GitHub release, so a release needs both halves to line up: bump `KPlugin.Version` in `metadata.json` (e.g. `26.3`), then publish a GitHub release whose tag is that version prefixed with `v` (`v26.3`). Users on older versions see the update notice within a day; a version bump without a matching release tag reaches nobody.
+Bug reports, feature ideas, and pull requests are welcome — see [Contributing](../README.md#contributing) in the main README, which also covers [how to cut a release](../README.md#releasing).
 
 ## License
 

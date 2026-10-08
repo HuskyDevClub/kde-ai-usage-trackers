@@ -11,7 +11,7 @@ except ImportError:
     print(json.dumps({"error": "Python 'requests' module not installed"}))
     sys.exit(0)
 
-REPO = "HuskyDevClub/claude-usage-kde-tracker"
+REPO = "HuskyDevClub/kde-ai-usage-trackers"
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES_PAGE_URL = f"https://github.com/{REPO}/releases/latest"
 METADATA_PATH = os.path.join(
@@ -131,7 +131,7 @@ def check_for_update(force: bool) -> dict[str, Any]:
             LATEST_RELEASE_URL,
             headers={
                 "Accept": "application/vnd.github+json",
-                "User-Agent": "claude-usage-kde-tracker",
+                "User-Agent": "kde-ai-usage-trackers",
             },
             timeout=10,
         )
