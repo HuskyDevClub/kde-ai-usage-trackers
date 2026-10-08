@@ -33,8 +33,9 @@ import os
 import re
 import sys
 import tempfile
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 try:
     import requests
@@ -140,7 +141,7 @@ def record_history(data_dir: str, percent: float) -> list[dict[str, Any]]:
     history_file = os.path.join(data_dir, "history.json")
     history = {date: num(peak) for date, peak in read_json(history_file).items()}
 
-    now = datetime.now()
+    now = datetime.now().astimezone()
     today = now.strftime("%Y-%m-%d")
     history[today] = max(percent, history.get(today, 0.0))
 
@@ -149,7 +150,7 @@ def record_history(data_dir: str, percent: float) -> list[dict[str, Any]]:
     pruned: dict[str, float] = {}
     for date, peak in history.items():
         try:
-            if datetime.strptime(date, "%Y-%m-%d").timestamp() >= cutoff:
+            if datetime.strptime(date, "%Y-%m-%d").astimezone().timestamp() >= cutoff:
                 pruned[date] = peak
         except ValueError:
             pass  # Skip corrupted date entries
@@ -159,7 +160,9 @@ def record_history(data_dir: str, percent: float) -> list[dict[str, Any]]:
     day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return [
         {
-            "day": day_names[datetime.strptime(date, "%Y-%m-%d").weekday()],
+            "day": day_names[
+                datetime.strptime(date, "%Y-%m-%d").astimezone().weekday()
+            ],
             "date": date,
             "percent": pruned[date],
         }

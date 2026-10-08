@@ -8,6 +8,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Lint Python
-        run: pipx run ruff check .
+        run: pipx run --spec ruff==0.16.10 ruff check .

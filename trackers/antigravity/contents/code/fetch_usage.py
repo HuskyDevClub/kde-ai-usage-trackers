@@ -64,6 +64,7 @@ def _read_keyring_secret() -> str | None:
             capture_output=True,
             text=True,
             timeout=15,
+            check=False,
         )
         if proc.returncode == 0 and proc.stdout.strip():
             return proc.stdout
@@ -84,8 +85,8 @@ def _read_keyring_secret() -> str | None:
                 return item.get_secret().decode("utf-8")
         finally:
             conn.close()
-    except Exception:
-        pass
+    except Exception:  # noqa: BLE001, S110
+        pass  # Any keyring failure just means no stored credentials
 
     return None
 
