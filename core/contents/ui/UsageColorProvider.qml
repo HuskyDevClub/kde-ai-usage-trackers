@@ -2,6 +2,7 @@ import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.kirigami as Kirigami
 
+// The colors for each usage level: the theme's, or the user's custom ones
 QtObject {
     id: colorProvider
 
@@ -16,4 +17,10 @@ QtObject {
     readonly property color criticalColor: Plasmoid.configuration.useCustomColors
         ? (Plasmoid.configuration.criticalColor || "#e74c3c")
         : Kirigami.Theme.negativeTextColor
+
+    function colorFor(percent) {
+        return percent >= Constants.usageCriticalThreshold ? criticalColor
+            : percent >= Constants.usageWarningThreshold ? warningColor
+                : normalColor
+    }
 }

@@ -12,8 +12,6 @@ PlasmoidItem {
 
     // The tracker's display name, e.g. "Claude"
     readonly property string trackerName: Plasmoid.metaData.rawData["X-Tracker-Name"] || Plasmoid.metaData.name
-    // The running version, straight from metadata.json — available even when update checks are off
-    readonly property string currentVersion: Plasmoid.metaData.version
 
     // Latest usage from fetch_usage.py
     property string plan: ""
@@ -52,7 +50,7 @@ PlasmoidItem {
     property var lastFetchTime: null
     property int refreshMinutes: Math.max(1, Plasmoid.configuration.refreshIntervalMinutes)
     property int backoffMultiplier: 1
-    property int maxBackoffMultiplier: 8
+    readonly property int maxBackoffMultiplier: 8
 
     switchWidth: Kirigami.Units.gridUnit * 14
     switchHeight: Kirigami.Units.gridUnit * 12
@@ -63,14 +61,15 @@ PlasmoidItem {
 
         // A named group is summarised by its busiest limit; an unnamed one lists each limit
         var lines = []
-        for (var i = 0; i < groups.length; i++) {
-            var buckets = groups[i].buckets || []
-            if (groups[i].name) {
-                var peak = 0
-                for (var j = 0; j < buckets.length; j++) peak = Math.max(peak, buckets[j].used || 0)
-                lines.push(groups[i].name + ": " + peak.toFixed(1) + "%")
+        for (var group of groups) {
+            var buckets = group.buckets || []
+            if (group.name) {
+                var peak = Math.max(0, ...buckets.map(b => b.used || 0))
+                lines.push(group.name + ": " + peak.toFixed(1) + "%")
             } else {
-                for (var k = 0; k < buckets.length; k++) lines.push(buckets[k].title + ": " + (buckets[k].used || 0).toFixed(1) + "%")
+                for (var bucket of buckets) {
+                    lines.push(bucket.title + ": " + (bucket.used || 0).toFixed(1) + "%")
+                }
             }
         }
         return lines.join("\n")

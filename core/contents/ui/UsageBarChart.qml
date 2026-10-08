@@ -30,7 +30,7 @@ ColumnLayout {
         // Placeholder when no data
         PlasmaComponents.Label {
             anchors.centerIn: parent
-            visible: !dailyData || dailyData.length === 0
+            visible: dailyData.length === 0
             text: i18nc("@info", "Usage history builds over time")
             font: Kirigami.Theme.smallFont
             opacity: 0.5
@@ -41,12 +41,15 @@ ColumnLayout {
             anchors.fill: parent
             anchors.bottomMargin: Kirigami.Units.gridUnit * 1.2
             spacing: 2
-            visible: dailyData && dailyData.length > 0
+            visible: dailyData.length > 0
 
             Repeater {
-                model: dailyData || []
+                model: dailyData
 
                 Item {
+                    // At least a sliver, so a 0% day still shows a bar
+                    readonly property real barHeight: Math.max(2, height * Math.min(modelData.percent, 100) / 100)
+
                     width: (parent.width - (dailyData.length - 1) * 2) / dailyData.length
                     height: parent.height
 
@@ -55,11 +58,9 @@ ColumnLayout {
                         anchors.bottom: parent.bottom
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: parent.width - 4
-                        height: Math.max(2, parent.height * Math.min(modelData.percent, 100) / 100)
+                        height: parent.barHeight
                         radius: 2
-                        color: modelData.percent >= Constants.usageCriticalThreshold ? colors.criticalColor
-                            : modelData.percent >= Constants.usageWarningThreshold ? colors.warningColor
-                                : colors.normalColor
+                        color: colors.colorFor(modelData.percent)
                         opacity: 0.8
 
                         Behavior on height {
@@ -71,12 +72,8 @@ ColumnLayout {
 
                     // Percentage label on top of bar
                     PlasmaComponents.Label {
-                        id: percentLabel
                         anchors.bottom: parent.bottom
-                        anchors.bottomMargin: Math.min(
-                            Math.max(2, parent.height * Math.min(modelData.percent, 100) / 100) + 2,
-                            parent.height - implicitHeight
-                        )
+                        anchors.bottomMargin: Math.min(parent.barHeight + 2, parent.height - implicitHeight)
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: Math.round(modelData.percent) + "%"
                         font.pixelSize: Kirigami.Theme.smallFont.pixelSize * 0.9
@@ -93,10 +90,10 @@ ColumnLayout {
             anchors.left: parent.left
             anchors.right: parent.right
             spacing: 2
-            visible: dailyData && dailyData.length > 0
+            visible: dailyData.length > 0
 
             Repeater {
-                model: dailyData || []
+                model: dailyData
 
                 Item {
                     width: (parent.width - (dailyData.length - 1) * 2) / dailyData.length

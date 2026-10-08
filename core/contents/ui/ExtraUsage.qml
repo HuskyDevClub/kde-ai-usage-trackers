@@ -33,7 +33,7 @@ ColumnLayout {
         }
 
         PlasmaComponents.Label {
-            text: limit > 0 ? "$" + used.toFixed(2) + " / $" + limit.toFixed(2) : "$" + used.toFixed(2)
+            text: "$" + used.toFixed(2) + (limit > 0 ? " / $" + limit.toFixed(2) : "")
             font: Kirigami.Theme.smallFont
             opacity: 0.8
         }
@@ -55,9 +55,7 @@ ColumnLayout {
             }
             width: parent.width * Math.min(utilization, 100) / 100
             radius: parent.radius
-            color: utilization >= Constants.usageCriticalThreshold ? colors.criticalColor
-                : utilization >= Constants.usageWarningThreshold ? colors.warningColor
-                    : colors.normalColor
+            color: colors.colorFor(utilization)
 
             Behavior on width {
                 NumberAnimation {

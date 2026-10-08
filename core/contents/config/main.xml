@@ -20,7 +20,7 @@
             <default>false</default>
         </entry>
         <entry name="checkForUpdates" type="Bool">
-            <label>Check GitHub for new widget releases once a day</label>
+            <label>Check GitHub for new app releases once a day</label>
             <default>true</default>
         </entry>
         <entry name="dismissedUpdateVersion" type="String">

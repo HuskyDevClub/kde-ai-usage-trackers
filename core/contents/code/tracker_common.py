@@ -24,8 +24,8 @@ fetch() returns the tracker's usage in the app's common shape, or raises Tracker
         "extra": {"used": 12.5, "limit": 50.0, "utilization": 25.0},  # optional: paid usage beyond the plan
     }
 
-run() adds lastUpdated, history, error, notLoggedIn and rateLimited, caches the result,
-and prints it as JSON for the widget.
+run() adds history, error, notLoggedIn and rateLimited, caches the result, and prints it
+as JSON for the widget.
 """
 
 import json
@@ -63,6 +63,7 @@ __all__ = [
     "TrackerError",
     "atomic_write_json",
     "num",
+    "read_json",
     "read_metadata",
     "requests",
     "run",
@@ -91,38 +92,40 @@ def num(value: Any, default: float = 0) -> float:
 
 
 def atomic_write_json(filepath: str, data: Any, mode: int = 0o600) -> bool:
-    """Write JSON to a file atomically using write-to-temp-then-rename.
-
-    Prevents data corruption if the process is interrupted mid-write.
-
-    Returns:
-        True on success, False on failure.
-    """
-    dir_path = os.path.dirname(filepath)
-    os.makedirs(dir_path, mode=0o700, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
+    """Write JSON to a temp file and rename it into place, so the file is never left
+    half-written. Returns whether it succeeded."""
+    tmp_path = None
     try:
+        dir_path = os.path.dirname(filepath)
+        os.makedirs(dir_path, mode=0o700, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
         with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2)
         os.chmod(tmp_path, mode)
         os.rename(tmp_path, filepath)
         return True
     except OSError:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
         return False
+
+
+def read_json(filepath: str) -> dict[str, Any]:
+    """The JSON object in a file, or an empty dict if it's missing, unreadable, or not an object."""
+    try:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def read_metadata() -> dict[str, Any]:
     """The installed package's metadata.json, or an empty dict if it can't be read."""
-    try:
-        with open(os.path.join(PACKAGE_DIR, "metadata.json"), "r") as f:
-            metadata = json.load(f)
-        return metadata if isinstance(metadata, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
+    return read_json(os.path.join(PACKAGE_DIR, "metadata.json"))
 
 
 def tracker_data_dir() -> str:
@@ -135,20 +138,14 @@ def tracker_data_dir() -> str:
 def record_history(data_dir: str, percent: float) -> list[dict[str, Any]]:
     """Record today's peak usage and return the last HISTORY_DAYS days for the daily chart."""
     history_file = os.path.join(data_dir, "history.json")
-    history: dict[str, float] = {}
-    try:
-        with open(history_file, "r") as f:
-            loaded = json.load(f)
-        if isinstance(loaded, dict):
-            history = {date: num(peak) for date, peak in loaded.items()}
-    except (json.JSONDecodeError, OSError):
-        pass
+    history = {date: num(peak) for date, peak in read_json(history_file).items()}
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
     history[today] = max(percent, history.get(today, 0.0))
 
     # Prune entries older than HISTORY_DAYS
-    cutoff = datetime.now().timestamp() - HISTORY_DAYS * 86400
+    cutoff = now.timestamp() - HISTORY_DAYS * 86400
     pruned: dict[str, float] = {}
     for date, peak in history.items():
         try:
@@ -180,17 +177,12 @@ def run(fetch: Callable[[], dict[str, Any]]) -> None:
     cache_file = os.path.join(data_dir, "usage.json")
 
     if "--cached" in sys.argv:
-        try:
-            with open(cache_file, "r") as f:
-                print(json.dumps(json.load(f)))
-        except (json.JSONDecodeError, OSError):
-            pass
+        cached = read_json(cache_file)
+        if cached:
+            print(json.dumps(cached))
         return
 
-    result: dict[str, Any] = {
-        "lastUpdated": datetime.now().strftime("%H:%M:%S"),
-        "error": None,
-    }
+    result: dict[str, Any] = {"error": None}
     try:
         result.update(fetch())
     except TrackerError as e:
@@ -206,17 +198,13 @@ def run(fetch: Callable[[], dict[str, Any]]) -> None:
     except requests.exceptions.RequestException as e:
         result["error"] = f"Request failed: {e}"
 
-    # On rate limit, serve the cached result flagged so the widget backs off
+    # On rate limit, serve the cached result flagged so the widget backs off; with no
+    # usable cache, fall through and output the error
     if result.get("rateLimited"):
-        try:
-            with open(cache_file, "r") as f:
-                cached = json.load(f)
-            cached["rateLimited"] = True
-            cached["error"] = None
-            print(json.dumps(cached))
+        cached = read_json(cache_file)
+        if cached:
+            print(json.dumps({**cached, "rateLimited": True, "error": None}))
             return
-        except (json.JSONDecodeError, OSError):
-            pass  # No usable cache — output the error result
     elif not result["error"]:
         if "historyPercent" in result:
             result["history"] = record_history(

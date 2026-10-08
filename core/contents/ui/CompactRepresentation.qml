@@ -16,15 +16,16 @@ Item {
     Layout.preferredHeight: Kirigami.Units.iconSizes.medium
 
     property real percent: root.panelPercent
+    property bool hasError: root.errorMessage !== "" && !root.notLoggedIn
     UsageColorProvider {
         id: colors
     }
+    property color usageColor: colors.colorFor(percent)
 
-    property color usageColor: percent >= Constants.usageCriticalThreshold ? colors.criticalColor
-        : percent >= Constants.usageWarningThreshold ? colors.warningColor
-            : colors.normalColor
+    // Repaint the donut whenever anything it draws changes
+    onPercentChanged: canvas.requestPaint()
+    onHasErrorChanged: canvas.requestPaint()
     onUsageColorChanged: canvas.requestPaint()
-    property bool hasError: root.errorMessage !== "" && !root.notLoggedIn
 
     MouseArea {
         anchors.fill: parent
@@ -73,18 +74,7 @@ Item {
                 }
             }
 
-            Connections {
-                target: root
-
-                function onPanelPercentChanged() {
-                    canvas.requestPaint()
-                }
-
-                function onErrorMessageChanged() {
-                    canvas.requestPaint()
-                }
-            }
-
+            // The track and the error ring use theme colors directly
             Connections {
                 target: Kirigami.Theme
 
@@ -92,15 +82,7 @@ Item {
                     canvas.requestPaint()
                 }
 
-                function onPositiveTextColorChanged() {
-                    canvas.requestPaint()
-                }
-
                 function onNegativeTextColorChanged() {
-                    canvas.requestPaint()
-                }
-
-                function onNeutralTextColorChanged() {
                     canvas.requestPaint()
                 }
             }

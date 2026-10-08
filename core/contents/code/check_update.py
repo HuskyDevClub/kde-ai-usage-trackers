@@ -2,11 +2,18 @@
 
 import json
 import os
+import re
 import sys
 import time
 from typing import Any
 
-from tracker_common import APP_DATA_DIR, atomic_write_json, read_metadata, requests
+from tracker_common import (
+    APP_DATA_DIR,
+    atomic_write_json,
+    read_json,
+    read_metadata,
+    requests,
+)
 
 REPO = "HuskyDevClub/kde-ai-usage-trackers"
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
@@ -23,17 +30,12 @@ def parse_version(version: str) -> tuple[int, ...]:
 
     Non-numeric suffixes are dropped, so '26.3-beta' parses as (26, 3).
     """
-    cleaned = version.strip().lstrip("vV")
     parts: list[int] = []
-    for part in cleaned.split("."):
-        digits = ""
-        for char in part:
-            if not char.isdigit():
-                break
-            digits += char
+    for part in version.strip().lstrip("vV").split("."):
+        digits = re.match(r"\d+", part)
         if not digits:
             break
-        parts.append(int(digits))
+        parts.append(int(digits.group()))
     return tuple(parts)
 
 
@@ -52,18 +54,8 @@ def is_newer(latest: str, current: str) -> bool:
 
 
 def local_version() -> str:
-    """Read the installed widget version from metadata.json."""
+    """The installed app version, from metadata.json."""
     return str(read_metadata().get("KPlugin", {}).get("Version", ""))
-
-
-def read_cache() -> dict[str, Any]:
-    """Read the cached update check result, or an empty dict if unavailable."""
-    try:
-        with open(CACHE_FILE, "r") as f:
-            cached = json.load(f)
-        return cached if isinstance(cached, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
 
 
 def build_result(latest_tag: str, release_url: str, current: str) -> dict[str, Any]:
@@ -79,23 +71,24 @@ def build_result(latest_tag: str, release_url: str, current: str) -> dict[str, A
     }
 
 
+def cached_result(cached: dict[str, Any], current: str) -> dict[str, Any]:
+    """The result of the cached check, re-compared against the version installed now."""
+    result = build_result(cached["latestTag"], cached.get("releaseUrl", ""), current)
+    result["checkedAt"] = cached.get("checkedAt", 0)
+    result["cached"] = True
+    return result
+
+
 def check_for_update(force: bool) -> dict[str, Any]:
     """Check GitHub Releases for a newer version, using a cached result when fresh."""
     current = local_version()
     if not current:
         return {"error": "Could not read installed version"}
 
-    cached = read_cache()
+    cached = read_json(CACHE_FILE)
     cache_age = time.time() - cached.get("checkedAt", 0)
-
-    # Serve the cached result, but re-compare against the version installed right now
     if not force and cached.get("latestTag") and cache_age < CHECK_INTERVAL_SECONDS:
-        result = build_result(
-            cached["latestTag"], cached.get("releaseUrl", ""), current
-        )
-        result["checkedAt"] = cached.get("checkedAt", 0)
-        result["cached"] = True
-        return result
+        return cached_result(cached, current)
 
     try:
         response = requests.get(
@@ -114,12 +107,7 @@ def check_for_update(force: bool) -> dict[str, Any]:
         # Rate limited — fall back to whatever was cached
         if response.status_code in (403, 429):
             if cached.get("latestTag"):
-                result = build_result(
-                    cached["latestTag"], cached.get("releaseUrl", ""), current
-                )
-                result["checkedAt"] = cached.get("checkedAt", 0)
-                result["cached"] = True
-                return result
+                return cached_result(cached, current)
             return {"error": "GitHub rate limit reached"}
 
         if response.status_code != 200:
@@ -134,14 +122,15 @@ def check_for_update(force: bool) -> dict[str, Any]:
         atomic_write_json(CACHE_FILE, result)
         return result
 
+    # Before RequestException, which requests' own JSONDecodeError also subclasses
+    except json.JSONDecodeError:
+        return {"error": "Invalid response from GitHub"}
     except requests.exceptions.Timeout:
         return {"error": "Update check timed out"}
     except requests.exceptions.ConnectionError:
         return {"error": "Could not reach GitHub"}
     except requests.exceptions.RequestException as e:
         return {"error": f"Update check failed: {e}"}
-    except json.JSONDecodeError:
-        return {"error": "Invalid response from GitHub"}
 
 
 def main() -> None:

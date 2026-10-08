@@ -90,7 +90,6 @@ PlasmaExtras.Representation {
 
             ColumnLayout {
                 id: contentLayout
-                width: parent.width
                 anchors {
                     left: parent.left
                     right: parent.right
@@ -229,7 +228,8 @@ PlasmaExtras.Representation {
                         var status = root.lastUpdated
                             ? i18nc("@info", "Updated: %1", root.lastUpdated)
                             : i18nc("@info", "Not yet updated")
-                        return root.currentVersion !== "" ? status + " · v" + root.currentVersion : status
+                        var version = root.updater.currentVersion
+                        return version !== "" ? status + " · v" + version : status
                     }
                     opacity: 0.6
                     font: Kirigami.Theme.smallFont

@@ -14,9 +14,7 @@ ColumnLayout {
         id: colors
     }
 
-    property color barColor: percent >= Constants.usageCriticalThreshold ? colors.criticalColor
-        : percent >= Constants.usageWarningThreshold ? colors.warningColor
-            : colors.normalColor
+    property color barColor: colors.colorFor(percent)
 
     spacing: Kirigami.Units.smallSpacing
 
@@ -73,6 +71,7 @@ ColumnLayout {
     PlasmaComponents.Label {
         Layout.fillWidth: true
         visible: resetsAt !== ""
+        // Reading resetTimeTick re-evaluates the countdown each time it ticks
         text: { void root.resetTimeTick; return TimeFormatter.formatResetTime(resetsAt) }
         font: Kirigami.Theme.smallFont
         opacity: 0.6

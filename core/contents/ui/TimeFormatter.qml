@@ -6,26 +6,20 @@ QtObject {
 
     readonly property var locale: Qt.locale()
 
+    // e.g. "Resets tomorrow 9:00 AM (in 14h 5m)", or "" once the time has passed
     function formatResetTime(resetsAt) {
         if (!resetsAt) return ""
 
         var resetDate = new Date(resetsAt)
         var now = new Date()
-
         if (resetDate <= now) return ""
 
-        var timeStr = resetDate.toLocaleTimeString(locale, Locale.ShortFormat)
-        var remainingStr = formatRemainingTime(resetDate, now)
-        var dayLabel = getDayLabel(resetDate, now)
-
-        if (dayLabel === "today") {
-            return "Resets today " + timeStr + " (in " + remainingStr + ")"
-        } else if (dayLabel === "tomorrow") {
-            return "Resets tomorrow " + timeStr + " (in " + remainingStr + ")"
-        } else {
-            var dateStr = formatDateShort(resetDate)
-            return "Resets " + dateStr + ", " + timeStr + " (in " + remainingStr + ")"
-        }
+        var time = resetDate.toLocaleTimeString(locale, Locale.ShortFormat)
+        var days = calendarDaysBetween(now, resetDate)
+        var when = days === 0 ? "today " + time
+            : days === 1 ? "tomorrow " + time
+                : formatDateShort(resetDate) + ", " + time
+        return "Resets " + when + " (in " + formatRemainingTime(resetDate, now) + ")"
     }
 
     function formatRemainingTime(resetDate, now) {
@@ -45,14 +39,12 @@ QtObject {
         return mins + "m"
     }
 
-    function getDayLabel(resetDate, now) {
-        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        var resetDay = new Date(resetDate.getFullYear(), resetDate.getMonth(), resetDate.getDate())
-        var diffDays = Math.floor((resetDay - today) / (1000 * 60 * 60 * 24))
-
-        if (diffDays === 0) return "today"
-        if (diffDays === 1) return "tomorrow"
-        return "later"
+    // Calendar days from one date to another, e.g. 1 for any time tomorrow
+    function calendarDaysBetween(from, to) {
+        var fromDay = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+        var toDay = new Date(to.getFullYear(), to.getMonth(), to.getDate())
+        // Rounded, since a day that starts or ends daylight saving time isn't 24 hours long
+        return Math.round((toDay - fromDay) / (1000 * 60 * 60 * 24))
     }
 
     function formatDateShort(date) {
