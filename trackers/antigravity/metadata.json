@@ -1,0 +1,9 @@
+{
+    "KPlugin": {
+        "Description": "Track your Google Antigravity (agy) usage limits and quotas",
+        "Icon": "google",
+        "Id": "com.github.huskydevclub.kde-ai-usage-trackers.antigravity",
+        "Name": "AI Usage Tracker — Antigravity"
+    },
+    "X-Tracker-Name": "Antigravity"
+}

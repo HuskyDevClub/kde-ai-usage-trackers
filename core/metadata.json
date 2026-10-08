@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Wynter Lin"
+            }
+        ],
+        "BugReportUrl": "https://github.com/HuskyDevClub/kde-ai-usage-trackers/issues",
+        "Category": "Utilities",
+        "FormFactors": [
+            "desktop"
+        ],
+        "License": "GPL-3.0",
+        "Version": "26.3",
+        "Website": "https://github.com/HuskyDevClub/kde-ai-usage-trackers"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

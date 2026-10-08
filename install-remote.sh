@@ -1,7 +1,7 @@
 #!/bin/bash
 # Usage: curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash
 #
-# Downloads the project and installs (or upgrades) all of its widgets. Any
+# Downloads the app and installs (or upgrades) it, every tracker included. Any
 # argument is ignored, so older instructions like `bash -s antigravity` still work.
 set -e
 
@@ -12,7 +12,7 @@ URL="https://github.com/$REPO/archive/refs/heads/$BRANCH.tar.gz"
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
-echo "Downloading KDE AI Usage Trackers..."
+echo "Downloading AI Usage Tracker..."
 
 if command -v curl &>/dev/null; then
     curl -fsSL "$URL" | tar xz -C "$TMPDIR" --strip-components=1
