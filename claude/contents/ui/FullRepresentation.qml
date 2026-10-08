@@ -106,75 +106,9 @@ PlasmaExtras.Representation {
                 spacing: Kirigami.Units.mediumSpacing
 
                 // Update notice
-                Kirigami.InlineMessage {
-                    Layout.fillWidth: true
-                    Layout.topMargin: Kirigami.Units.smallSpacing
-                    visible: root.updateAvailable
-                        || root.updateNotice !== ""
-                        || root.updateState === "installing"
-                        || root.updateState === "installed"
-                        || root.updateState === "failed"
-
-                    type: {
-                        if (root.updateState === "failed") return Kirigami.MessageType.Error
-                        if (root.updateNotice !== "") return root.updateNoticeError
-                            ? Kirigami.MessageType.Error : Kirigami.MessageType.Positive
-                        if (root.updateState === "installed") return Kirigami.MessageType.Positive
-                        return Kirigami.MessageType.Information
-                    }
-
-                    text: {
-                        if (root.updateState === "installing")
-                            return i18nc("@info", "Installing version %1…", root.latestVersion)
-                        if (root.updateState === "installed")
-                            return i18nc("@info", "Version %1 installed. Restart Plasma to apply it.", root.latestVersion)
-                        if (root.updateState === "failed")
-                            return i18nc("@info", "Update failed: %1", root.updateError)
-                        if (root.updateNotice !== "")
-                            return root.updateNotice
-                        return i18nc("@info", "Version %1 is available (you have %2).", root.latestVersion, root.currentVersion)
-                    }
-
-                    actions: [
-                        Kirigami.Action {
-                            text: i18nc("@action:button", "Update now")
-                            icon.name
-                    :
-                    "system-software-update"
-                    visible: root.updateAvailable && root.updateState !== "installing"
-                    onTriggered: root.installUpdate()
+                UpdateNotice {
+                    updater: root.updater
                 }
-                ,
-                Kirigami.Action {
-                    text: i18nc("@action:button", "Restart Plasma")
-                    icon.name: "system-reboot"
-                    visible: root.updateState === "installed"
-                    onTriggered: root.restartPlasma()
-                }
-                ,
-                Kirigami.Action {
-                    text: i18nc("@action:button", "Retry")
-                    icon.name: "view-refresh"
-                    visible: root.updateState === "failed"
-                    onTriggered: root.installUpdate()
-                }
-                ,
-                Kirigami.Action {
-                    text: i18nc("@action:button", "Release notes")
-                    icon.name: "internet-web-browser"
-                    visible: root.releaseUrl !== ""
-                        && (root.updateAvailable || root.updateState === "failed")
-                    onTriggered: Qt.openUrlExternally(root.releaseUrl)
-                }
-                ,
-                Kirigami.Action {
-                    text: i18nc("@action:button", "Skip")
-                    icon.name: "dialog-close"
-                    visible: root.updateAvailable && root.updateState === "idle"
-                    onTriggered: root.dismissUpdate()
-                }
-                ]
-            }
 
             // Error message
             PlasmaExtras.Heading {

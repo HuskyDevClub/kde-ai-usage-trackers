@@ -6,8 +6,18 @@ import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
 
 KCM.SimpleKCM {
+    id: page
+
     property alias cfg_refreshIntervalMinutes: refreshSpinBox.value
     property int cfg_refreshIntervalMinutesDefault: 5
+    property alias cfg_checkForUpdates: checkForUpdatesCheckBox.checked
+    property bool cfg_checkForUpdatesDefault: true
+    // Not user-editable, but the config dialog binds a cfg_ property per config key —
+    // declaring these keeps it from warning, and keeps Apply from writing back stale values
+    property string cfg_dismissedUpdateVersion
+    property string cfg_dismissedUpdateVersionDefault: ""
+    property string cfg_updateCheckedAt
+    property string cfg_updateCheckedAtDefault: ""
     property alias cfg_useCustomColors: useCustomColorsCheckBox.checked
     property bool cfg_useCustomColorsDefault: false
     property string cfg_normalColor
@@ -16,6 +26,14 @@ KCM.SimpleKCM {
     property string cfg_warningColorDefault: "#f39c12"
     property string cfg_criticalColor
     property string cfg_criticalColorDefault: "#e74c3c"
+
+    // "Check now" below
+    ManualUpdateCheck {
+        id: updateChecker
+        onConfigWritten: function (key, value) {
+            page["cfg_" + key] = value
+        }
+    }
 
     // Accessibility color presets
     readonly property var colorPresets: [
@@ -48,6 +66,34 @@ KCM.SimpleKCM {
         QQC2.Label {
             text: i18ncp("@info", "Every %1 minute", "Every %1 minutes", refreshSpinBox.value)
             opacity: 0.7
+        }
+
+        Kirigami.Separator {
+            Kirigami.FormData.isSection: true
+            Kirigami.FormData.label: i18nc("@title", "Updates")
+        }
+
+        QQC2.CheckBox {
+            id: checkForUpdatesCheckBox
+            Kirigami.FormData.label: i18nc("@label:checkbox", "Check for updates:")
+            text: i18nc("@option:check", "Check automatically once a day")
+        }
+
+        QQC2.Button {
+            Kirigami.FormData.label: i18nc("@label", "Manual check:")
+            text: i18nc("@action:button", "Check now")
+            icon.name: "system-software-update"
+            enabled: !updateChecker.busy
+            onClicked: updateChecker.check()
+        }
+
+        QQC2.Label {
+            text: updateChecker.status
+            visible: updateChecker.status !== ""
+            color: updateChecker.failed ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
+            opacity: 0.9
+            wrapMode: Text.WordWrap
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 20
         }
 
         Kirigami.Separator {

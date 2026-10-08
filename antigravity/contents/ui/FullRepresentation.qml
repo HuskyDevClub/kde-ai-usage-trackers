@@ -98,6 +98,11 @@ PlasmaExtras.Representation {
                 }
                 spacing: Kirigami.Units.mediumSpacing
 
+                // Update notice
+                UpdateNotice {
+                    updater: root.updater
+                }
+
                 // Login reminder
                 Kirigami.InlineMessage {
                     Layout.fillWidth: true

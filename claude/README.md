@@ -26,46 +26,15 @@ A KDE Plasma 6 widget that displays your Claude AI usage limits and quotas direc
 
 ## Installation
 
-Just copy and paste this single line into your terminal:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash
-```
-
-Then right-click your panel, select **Add Widgets**, and search for **Claude**.
+See the [main README](../README.md#installation) — one command installs every widget in this project.
 
 ## Updating
 
-The widget checks GitHub once a day for a newer release. When one is available, a notice appears at the top of the popup with an **Update now** button that downloads and installs it — followed by a **Restart Plasma** button to apply it.
-
-**Skip** hides the notice until a version newer than the one you skipped is released. Automatic checks can be turned off in the widget's settings.
-
-### Checking manually
-
-Manual checks work whether or not automatic checking is enabled, and always ask GitHub directly rather than reusing the cached daily answer:
-
-- **Check now** in the widget's settings, under **Updates** — the result appears right there, and the widget picks it up too, or
-- **Check for Updates** in the widget's right-click menu, which opens the popup with the result
-
-Either way you get an answer: an update notice, *"You're up to date"*, or the reason the check failed. A manual check also un-skips a version you previously skipped.
-
-From a terminal:
-
-```bash
-python3 ~/.local/share/plasma/plasmoids/com.github.huskydevclub.claude-usage-kde-tracker/contents/code/check_update.py --force
-```
-
-To update manually instead, re-run the install command:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash
-```
+See the [main README](../README.md#updating) — updating from any widget upgrades every widget in this project.
 
 ## Uninstallation
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/claude/uninstall.sh | bash
-```
+See the [main README](../README.md#uninstallation) — one command removes every widget in this project.
 
 ## Configuration
 
@@ -84,8 +53,6 @@ Right-click the widget and select **Configure** to adjust:
 The widget calls the Anthropic OAuth usage API (`/api/oauth/usage`) using credentials from Claude Code CLI. A Python script ([fetch_usage.py](contents/code/fetch_usage.py)) handles authentication and API communication, while the QML frontend renders the data as interactive progress bars and charts.
 
 Usage data is cached locally at `~/.local/share/claude-usage-tracker/usage.json` so the widget can display stale data instantly while a fresh fetch runs in the background.
-
-Update checks ([check_update.py](contents/code/check_update.py)) compare the `Version` field in `metadata.json` against the latest GitHub release tag, caching the answer for 24 hours in `~/.local/share/claude-usage-tracker/update.json` to stay well inside GitHub's unauthenticated rate limit. Installing an update ([apply_update.sh](contents/code/apply_update.sh)) downloads that release's tarball and hands it to `kpackagetool6 --upgrade` after verifying the package ID matches.
 
 ## Contributing
 

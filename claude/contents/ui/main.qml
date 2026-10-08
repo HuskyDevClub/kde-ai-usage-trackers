@@ -32,21 +32,14 @@ PlasmoidItem {
     // Daily usage history for chart
     property var dailyHistory: []
 
-    // Update check state
-    property bool updateAvailable: false
     // The running version, straight from metadata.json — available even when update checks are off
     property string currentVersion: Plasmoid.metaData.version
-    property string latestVersion: ""
-    property string latestTag: ""
-    property string releaseUrl: ""
-    property string updateError: ""
-    // idle | checking | installing | installed | failed
-    property string updateState: "idle"
 
-    // Transient feedback for a user-requested check ("up to date", or why it failed)
-    property bool manualCheck: false
-    property string updateNotice: ""
-    property bool updateNoticeError: false
+    // GitHub release check and one-click update, shown by UpdateNotice in the popup
+    UpdateManager {
+        id: updateManager
+    }
+    property alias updater: updateManager
 
     hideOnWindowDeactivate: !pinned
 
@@ -54,16 +47,14 @@ PlasmoidItem {
     Plasmoid.contextualActions: [
         PlasmaCore.Action {
             text: i18nc("@action", "Check for Updates")
-            icon.name
-    :
-    "system-software-update"
-    enabled: root.updateState !== "checking" && root.updateState !== "installing"
-    onTriggered: {
-        root.expanded = true  // the result shows up in the popup
-        root.checkForUpdate(true)
-    }
-}
-]
+            icon.name: "system-software-update"
+            enabled: !root.updater.busy
+            onTriggered: {
+                root.expanded = true  // the result shows up in the popup
+                root.updater.checkForUpdate(true)
+            }
+        }
+    ]
 
 // Refresh control
 property var lastFetchTime: null
@@ -185,104 +176,6 @@ PlasmaSupport.DataSource {
     }
 }
 
-// DataSource for the GitHub update check
-PlasmaSupport.DataSource {
-    id: updateChecker
-    engine: "executable"
-    connectedSources: []
-
-    onNewData: function (source, data) {
-        disconnectSource(source)
-
-        // A manual check reports back either way — an automatic one stays quiet unless there's an update
-        var wasManual = manualCheck
-        manualCheck = false
-
-        if (updateState === "checking") {
-            updateState = "idle"
-        }
-
-        handleCommandOutput(data,
-                function (result) {
-                if (result.error) {
-                    if (wasManual) showUpdateNotice(result.error, true)
-                    return
-                }
-
-                latestVersion = result.latestVersion || ""
-                latestTag = result.latestTag || ""
-                releaseUrl = result.releaseUrl || ""
-
-                // Asking explicitly overrides an earlier "Skip" of this version
-                updateAvailable = result.updateAvailable === true
-                    && (wasManual || latestVersion !== Plasmoid.configuration.dismissedUpdateVersion)
-
-                if (wasManual) {
-                    if (updateAvailable) {
-                        Plasmoid.configuration.dismissedUpdateVersion = ""
-                    } else {
-                        showUpdateNotice(i18nc("@info", "You're up to date (version %1).", currentVersion), false)
-                    }
-                }
-            },
-                function (error) {
-                if (wasManual) showUpdateNotice(error, true)
-            }
-        )
-    }
-
-    function exec(cmd) {
-        connectSource(cmd)
-    }
-}
-
-// DataSource for installing an update
-PlasmaSupport.DataSource {
-    id: updateInstaller
-    engine: "executable"
-    connectedSources: []
-
-    onNewData: function (source, data) {
-        disconnectSource(source)
-
-        handleCommandOutput(data,
-                function (result) {
-                if (result.success) {
-                    updateState = "installed"
-                    updateAvailable = false
-                    updateError = ""
-                } else {
-                    updateState = "failed"
-                    updateError = result.error || "Update failed"
-                }
-            },
-                function (error) {
-                updateState = "failed"
-                updateError = error
-            }
-        )
-    }
-
-    function exec(cmd) {
-        connectSource(cmd)
-    }
-}
-
-// DataSource for restarting plasmashell after an update
-PlasmaSupport.DataSource {
-    id: plasmaRestarter
-    engine: "executable"
-    connectedSources: []
-
-    onNewData: function (source, data) {
-        disconnectSource(source)
-    }
-
-    function exec(cmd) {
-        connectSource(cmd)
-    }
-}
-
 // Absolute path to a helper script shipped with the widget
 function codePath(fileName) {
     return decodeURIComponent(Qt.resolvedUrl("../code/" + fileName).toString().replace(/^file:\/\//, ""))
@@ -295,69 +188,6 @@ function fetchUsage() {
     isLoading = true
 
     executable.exec("python3 \"" + codePath("fetch_usage.py") + "\"")
-}
-
-// Check GitHub for a newer release. A manual check runs even with automatic checks turned off,
-// and always bypasses the script's 24h cache so "Check for Updates" really does check.
-function checkForUpdate(manual) {
-    if (!manual && !Plasmoid.configuration.checkForUpdates) return
-    runUpdateCheck(manual === true, manual === true)
-}
-
-// Re-read the result the settings page just cached — no network call, and no config gate,
-// since the user asking there is asking regardless of the automatic-check setting
-function refreshUpdateState() {
-    runUpdateCheck(false, false)
-}
-
-function runUpdateCheck(force, manual) {
-    // "installed" keeps the restart reminder up — checking again can't help until Plasma restarts
-    if (updateState === "checking" || updateState === "installing" || updateState === "installed") return
-
-    manualCheck = manual
-    updateNotice = ""
-    updateState = "checking"
-    updateChecker.exec("python3 \"" + codePath("check_update.py") + "\"" + (force ? " --force" : ""))
-}
-
-// Show transient feedback for a manual check
-function showUpdateNotice(text, isError) {
-    updateNotice = text
-    updateNoticeError = isError === true
-    noticeTimer.restart()
-}
-
-Timer {
-    id: noticeTimer
-    interval: 10000
-    onTriggered: root.updateNotice = ""
-}
-
-// Download and install the latest release
-function installUpdate() {
-    if (updateState === "installing" || latestTag === "") return
-
-    // The tag comes from the GitHub API and ends up in a shell command — never pass through anything exotic
-    if (!/^[A-Za-z0-9._-]+$/.test(latestTag)) {
-        updateState = "failed"
-        updateError = "Invalid release tag"
-        return
-    }
-
-    updateState = "installing"
-    updateError = ""
-    updateInstaller.exec("bash \"" + codePath("apply_update.sh") + "\" \"" + latestTag + "\"")
-}
-
-// Hide the update notice until a newer version than this one is released
-function dismissUpdate() {
-    Plasmoid.configuration.dismissedUpdateVersion = latestVersion
-    updateAvailable = false
-}
-
-// Detached so the new shell survives the current one being replaced
-function restartPlasma() {
-    plasmaRestarter.exec("setsid -f plasmashell --replace")
 }
 
 // Parse API response with validation
@@ -452,35 +282,8 @@ Timer {
     onTriggered: fetchUsage()
 }
 
-// Periodic update check — the script only hits GitHub once a day, this just re-reads its cache
-Timer {
-    interval: 6 * 60 * 60 * 1000
-    running: Plasmoid.configuration.checkForUpdates
-    repeat: true
-    onTriggered: checkForUpdate(false)
-}
-
-// Check immediately when the user turns update checks back on
-Connections {
-    target: Plasmoid.configuration
-
-    function onCheckForUpdatesChanged() {
-        if (Plasmoid.configuration.checkForUpdates) {
-            checkForUpdate(false)
-        } else {
-            updateAvailable = false
-        }
-    }
-
-    // The settings page ran a check — pick up its freshly cached result
-    function onUpdateCheckedAtChanged() {
-        refreshUpdateState()
-    }
-}
-
 // Initial load: show cached data first, then fetch fresh data (triggered by cacheLoader.onNewData)
 Component.onCompleted: {
     cacheLoader.loadCache()
-    checkForUpdate(false)
 }
 }

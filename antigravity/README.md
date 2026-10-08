@@ -11,6 +11,7 @@ A KDE Plasma 6 widget that displays your Google Antigravity (`agy`) AI usage lim
 - **Auto-login** via Antigravity CLI (`agy`) credentials (from Secret Service keyring or local credentials)
 - **Pin popup** to keep the detail view open
 - **Colorblind-friendly presets** and custom color schemes
+- **Update notifications** with one-click install when a new release is published
 
 ## Requirements
 
@@ -20,27 +21,15 @@ A KDE Plasma 6 widget that displays your Google Antigravity (`agy`) AI usage lim
 
 ## Installation
 
-Just copy and paste this single line into your terminal:
+See the [main README](../README.md#installation) — one command installs every widget in this project.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/install-remote.sh | bash -s antigravity
-```
+## Updating
 
-Or from a clone:
-
-```bash
-git clone https://github.com/HuskyDevClub/kde-ai-usage-trackers.git
-cd kde-ai-usage-trackers/antigravity
-bash install.sh
-```
-
-Then right-click your panel, select **Add Widgets**, and search for **Antigravity**.
+See the [main README](../README.md#updating) — updating from any widget upgrades every widget in this project.
 
 ## Uninstallation
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/HuskyDevClub/kde-ai-usage-trackers/main/antigravity/uninstall.sh | bash
-```
+See the [main README](../README.md#uninstallation) — one command removes every widget in this project.
 
 ## Configuration
 

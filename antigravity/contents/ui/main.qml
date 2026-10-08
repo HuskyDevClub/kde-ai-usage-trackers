@@ -20,7 +20,26 @@ PlasmoidItem {
 
     property string currentVersion: Plasmoid.metaData.version
 
+    // GitHub release check and one-click update, shown by UpdateNotice in the popup
+    UpdateManager {
+        id: updateManager
+    }
+    property alias updater: updateManager
+
     hideOnWindowDeactivate: !pinned
+
+    // Right-click menu entry, so a manual check is reachable without opening the popup
+    Plasmoid.contextualActions: [
+        PlasmaCore.Action {
+            text: i18nc("@action", "Check for Updates")
+            icon.name: "system-software-update"
+            enabled: !root.updater.busy
+            onTriggered: {
+                root.expanded = true  // the result shows up in the popup
+                root.updater.checkForUpdate(true)
+            }
+        }
+    ]
 
     // Refresh control
     property var lastFetchTime: null

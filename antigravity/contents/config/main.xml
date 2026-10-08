@@ -11,6 +11,18 @@
             <min>1</min>
             <max>60</max>
         </entry>
+        <entry name="checkForUpdates" type="Bool">
+            <label>Check GitHub for new widget releases once a day</label>
+            <default>true</default>
+        </entry>
+        <entry name="dismissedUpdateVersion" type="String">
+            <label>Version whose update notice the user dismissed</label>
+            <default></default>
+        </entry>
+        <entry name="updateCheckedAt" type="String">
+            <label>Timestamp of the last check run from the settings page</label>
+            <default></default>
+        </entry>
         <entry name="useCustomColors" type="Bool">
             <label>Use custom colors instead of theme colors</label>
             <default>false</default>

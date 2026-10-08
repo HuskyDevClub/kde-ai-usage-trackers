@@ -1,47 +1,55 @@
 #!/bin/bash
-# Usage: release.sh <claude|antigravity> [extra gh release create flags, e.g. --notes "..."]
+# Usage: release.sh [extra gh release create flags, e.g. --notes "..."]
 #
-# Tags and publishes a release of one widget. The tag points at a standalone
-# commit holding just that widget's folder at its root, so the tag's source
-# tarball is an installable plasmoid — the in-widget updater downloads it and
-# expects metadata.json at the top level.
+# Tags and publishes a release of the whole project as v<Version>. Every
+# widget's metadata.json must carry the same Version, so bump them together.
+# Installed widgets update by downloading the tag's source tarball and running
+# its install.sh, which upgrades every widget.
 set -euo pipefail
 
-WIDGET="${1:-}"
-case "$WIDGET" in
-    # Claude keeps plain vX.Y tags and the "Latest" flag: installed widgets
-    # read /releases/latest and only understand v-prefixed tags
-    claude) TAG_PREFIX="v"; LATEST=true ;;
-    antigravity) TAG_PREFIX="antigravity-v"; LATEST=false ;;
-    *)
-        echo "Usage: $0 <claude|antigravity> [gh release create flags]" >&2
-        exit 1
-        ;;
-esac
-shift
+WIDGETS=(claude antigravity)
 
 cd "$(dirname "$0")"
 
-read_metadata() {
-    python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["KPlugin"][sys.argv[2]])' \
-        "$WIDGET/metadata.json" "$1"
+# Shared files are committed copies, so never publish a widget whose copies drifted
+./sync-shared.sh --check
+
+read_version() {
+    python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["KPlugin"]["Version"])' \
+        "$1/metadata.json"
 }
 
-NAME=$(read_metadata Name)
-VERSION=$(read_metadata Version)
-TAG="$TAG_PREFIX$VERSION"
+VERSION=$(read_version "${WIDGETS[0]}")
+for widget in "${WIDGETS[@]}"; do
+    widget_version=$(read_version "$widget")
+    if [ "$widget_version" != "$VERSION" ]; then
+        echo "Error: $widget/metadata.json is at $widget_version but ${WIDGETS[0]} is at $VERSION — bump them together" >&2
+        exit 1
+    fi
+done
+TAG="v$VERSION"
 
-if ! git diff --quiet HEAD -- "$WIDGET"; then
-    echo "Error: $WIDGET/ has uncommitted changes" >&2
+if ! git diff --quiet HEAD; then
+    echo "Error: there are uncommitted changes" >&2
     exit 1
 fi
 
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-    echo "Error: tag $TAG already exists — bump Version in $WIDGET/metadata.json first" >&2
+    echo "Error: tag $TAG already exists — bump Version in every metadata.json first" >&2
     exit 1
 fi
 
-COMMIT=$(git commit-tree "HEAD:$WIDGET" -m "$NAME $VERSION")
+# Claude widgets from v26.3 install the tarball root as the Claude package, so the
+# tagged tree also carries claude/metadata.json and claude/contents at its root.
+# Newer updaters run install.sh and ignore them. Drop this once v26.3 installs
+# have had time to update.
+TREE=$(
+    {
+        git ls-tree HEAD
+        git ls-tree HEAD claude/metadata.json claude/contents | sed 's|\tclaude/|\t|'
+    } | git mktree
+)
+COMMIT=$(git commit-tree "$TREE" -p HEAD -m "KDE AI Usage Trackers $VERSION")
 git tag "$TAG" "$COMMIT"
 git push origin "refs/tags/$TAG"
-gh release create "$TAG" --title "$NAME $VERSION" --latest="$LATEST" "$@"
+gh release create "$TAG" --title "KDE AI Usage Trackers $VERSION" --latest "$@"

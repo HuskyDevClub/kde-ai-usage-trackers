@@ -19,5 +19,6 @@
         "Version": "26.3",
         "Website": "https://github.com/HuskyDevClub/kde-ai-usage-trackers"
     },
-    "X-Plasma-API-Minimum-Version": "6.0"
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Tracker-IconFile": "screenshots/preview.png"
 }
