@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Description": "Track your Ollama Cloud usage limits and credits",
+        "Icon": "weather-clouds",
+        "Id": "com.github.huskydevclub.kde-ai-usage-trackers.ollama-cloud"
+    },
+    "X-Tracker-Name": "Ollama Cloud"
+}

@@ -6,6 +6,7 @@ A KDE Plasma 6 app that shows how much of your AI coding assistants' usage limit
 |---|---|---|
 | [Claude](trackers/claude/README.md) | Session and weekly limits, per-model limits, extra (paid) usage | Claude Code CLI |
 | [Antigravity](trackers/antigravity/README.md) | Gemini and 3rd-party model quota pools | Antigravity CLI (`agy`) |
+| [Ollama Cloud](trackers/ollama-cloud/README.md) | Included credits, or session and weekly limits on legacy plans | Ollama (`ollama signin`) |
 
 ![Claude tracker](trackers/claude/screenshots/preview.png)
 
@@ -132,7 +133,7 @@ release.sh          tags and publishes a release
 | Command | What it does |
 |---|---|
 | `./install.sh` | Build every tracker's package and install or upgrade the app |
-| `plasmawindowed com.github.huskydevclub.kde-ai-usage-trackers.claude` | Open the installed Claude tracker in a window — no Plasma restart needed (end with `.antigravity` for Antigravity) |
+| `plasmawindowed com.github.huskydevclub.kde-ai-usage-trackers.claude` | Open the installed Claude tracker in a window — no Plasma restart needed (end with `.antigravity` or `.ollama-cloud` for the others) |
 | `./build.sh <dir>` | Build the packages into `<dir>` without installing, to inspect them |
 | `ruff check .` | Lint the Python code |
 | `./release.sh` | Tag and publish a release — bump `Version` in `core/metadata.json` first |
