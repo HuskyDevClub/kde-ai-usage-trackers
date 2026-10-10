@@ -7,7 +7,7 @@ ColumnLayout {
     id: barChart
 
     // Each day's peak usage, recorded by tracker_common.py: { day: "Mon", date: "2026-02-12", percent: 45.2 }
-    property var dailyData: root.history || []
+    readonly property var dailyData: root.history
 
     UsageColorProvider {
         id: colors
@@ -23,9 +23,14 @@ ColumnLayout {
 
     // Bar chart area
     Item {
+        id: chartArea
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.minimumHeight: Kirigami.Units.gridUnit * 3
+
+        // One column per day, shared by its bar and its day label so the two line up
+        readonly property int columnSpacing: 2
+        readonly property real columnWidth: (width - (dailyData.length - 1) * columnSpacing) / dailyData.length
 
         // Placeholder when no data
         PlasmaComponents.Label {
@@ -40,7 +45,7 @@ ColumnLayout {
         Row {
             anchors.fill: parent
             anchors.bottomMargin: Kirigami.Units.gridUnit * 1.2
-            spacing: 2
+            spacing: chartArea.columnSpacing
             visible: dailyData.length > 0
 
             Repeater {
@@ -50,7 +55,7 @@ ColumnLayout {
                     // At least a sliver, so a 0% day still shows a bar
                     readonly property real barHeight: Math.max(2, height * Math.min(modelData.percent, 100) / 100)
 
-                    width: (parent.width - (dailyData.length - 1) * 2) / dailyData.length
+                    width: chartArea.columnWidth
                     height: parent.height
 
                     // Bar
@@ -89,14 +94,14 @@ ColumnLayout {
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            spacing: 2
+            spacing: chartArea.columnSpacing
             visible: dailyData.length > 0
 
             Repeater {
                 model: dailyData
 
                 Item {
-                    width: (parent.width - (dailyData.length - 1) * 2) / dailyData.length
+                    width: chartArea.columnWidth
                     height: Kirigami.Units.gridUnit
 
                     PlasmaComponents.Label {

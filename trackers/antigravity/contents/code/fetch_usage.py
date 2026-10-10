@@ -19,6 +19,7 @@ from tracker_common import (
     num,
     read_json,
     requests,
+    response_json,
     run,
 )
 
@@ -104,27 +105,18 @@ def _parse_expiry(value: Any) -> datetime | None:
 
 
 def _refresh_access_token(refresh_token: str) -> str:
-    try:
-        response = requests.post(
-            OAUTH_TOKEN_URL,
-            data={
-                "client_id": OAUTH_CLIENT_ID,
-                "client_secret": OAUTH_CLIENT_SECRET,
-                "refresh_token": refresh_token,
-                "grant_type": "refresh_token",
-            },
-            timeout=15,
-        )
-    except requests.exceptions.RequestException:
-        raise TrackerError("Connection error")
-
-    if response.status_code != 200:
-        raise TrackerError(SESSION_EXPIRED, not_logged_in=True)
-    try:
-        token = response.json().get("access_token")
-    except json.JSONDecodeError:
-        token = None
-    if not token:
+    response = requests.post(
+        OAUTH_TOKEN_URL,
+        data={
+            "client_id": OAUTH_CLIENT_ID,
+            "client_secret": OAUTH_CLIENT_SECRET,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token",
+        },
+        timeout=15,
+    )
+    token = (response_json(response) or {}).get("access_token")
+    if response.status_code != 200 or not token:
         raise TrackerError(SESSION_EXPIRED, not_logged_in=True)
     return token
 
@@ -222,15 +214,14 @@ def _call(
     if response.status_code == 403:
         raise TrackerError("Antigravity access denied. Check your plan")
     if response.status_code == 429:
-        raise TrackerError("Rate limited — using cached data", rate_limited=True)
+        raise TrackerError("Rate limited — retrying later", rate_limited=True)
     if response.status_code != 200:
         raise TrackerError(f"Antigravity API error: {response.status_code}")
 
-    try:
-        data = response.json()
-    except json.JSONDecodeError:
+    data = response_json(response)
+    if data is None:
         raise TrackerError("Invalid Antigravity API response")
-    return (data if isinstance(data, dict) else {}), token
+    return data, token
 
 
 def _project_id(load_response: dict) -> str:

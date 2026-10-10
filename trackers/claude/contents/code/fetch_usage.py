@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Claude tracker: usage from the Anthropic OAuth usage API, signed in with Claude Code's credentials."""
 
-import json
 import os
 import time
 from typing import Any
@@ -12,6 +11,7 @@ from tracker_common import (
     num,
     read_json,
     requests,
+    response_json,
     run,
 )
 
@@ -19,6 +19,7 @@ OAUTH_USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 OAUTH_TOKEN_URL = "https://console.anthropic.com/v1/oauth/token"
 OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 CREDENTIALS_PATH = os.path.join(os.path.expanduser("~"), ".claude", ".credentials.json")
+SESSION_EXPIRED = "Session expired. Run: claude login"
 
 
 def _is_token_expired(oauth: dict) -> bool:
@@ -30,37 +31,26 @@ def _is_token_expired(oauth: dict) -> bool:
     return expires_at < time.time()
 
 
-def _refresh_token(credentials: dict) -> str | None:
-    """Get a new access token with the refresh token, and save it to the credentials file.
-
-    Returns the new access token, or None if it can't be refreshed.
-    """
+def _refresh_token(credentials: dict) -> str:
+    """Get a new access token with the refresh token, and save it to the credentials file."""
     oauth = credentials.get("claudeAiOauth")
     refresh_token = oauth.get("refreshToken") if isinstance(oauth, dict) else None
     if not refresh_token:
-        return None
+        raise TrackerError(SESSION_EXPIRED, not_logged_in=True)
 
-    try:
-        response = requests.post(
-            OAUTH_TOKEN_URL,
-            json={
-                "grant_type": "refresh_token",
-                "client_id": OAUTH_CLIENT_ID,
-                "refresh_token": refresh_token,
-            },
-            timeout=15,
-        )
-        if response.status_code != 200:
-            return None
-        token_data = response.json()
-    except (requests.exceptions.RequestException, json.JSONDecodeError):
-        return None
-
-    access_token = (
-        token_data.get("access_token") if isinstance(token_data, dict) else None
+    response = requests.post(
+        OAUTH_TOKEN_URL,
+        json={
+            "grant_type": "refresh_token",
+            "client_id": OAUTH_CLIENT_ID,
+            "refresh_token": refresh_token,
+        },
+        timeout=15,
     )
-    if not access_token:
-        return None
+    token_data = response_json(response) or {}
+    access_token = token_data.get("access_token")
+    if response.status_code != 200 or not access_token:
+        raise TrackerError(SESSION_EXPIRED, not_logged_in=True)
 
     oauth["accessToken"] = access_token
     if token_data.get("refresh_token"):
@@ -101,12 +91,12 @@ def fetch() -> dict[str, Any]:
     if not isinstance(oauth, dict):
         oauth = {}
     token = oauth.get("accessToken")
-    if token and _is_token_expired(oauth):
-        token = _refresh_token(credentials)
     if not token:
         raise TrackerError(
             "No credentials found. Run: claude login", not_logged_in=True
         )
+    if _is_token_expired(oauth):
+        token = _refresh_token(credentials)
 
     response = _make_usage_request(token)
 
@@ -114,23 +104,19 @@ def fetch() -> dict[str, Any]:
     # credentials in case Claude Code has replaced them since
     if response.status_code == 401:
         token = _refresh_token(read_json(CREDENTIALS_PATH))
-        if token:
-            response = _make_usage_request(token)
+        response = _make_usage_request(token)
 
     if response.status_code == 401:
-        raise TrackerError("Session expired. Run: claude login", not_logged_in=True)
+        raise TrackerError(SESSION_EXPIRED, not_logged_in=True)
     if response.status_code == 403:
-        raise TrackerError("Access denied. Check your subscription.")
+        raise TrackerError("Access denied. Check your subscription")
     if response.status_code == 429:
-        raise TrackerError("Rate limited — using cached data", rate_limited=True)
+        raise TrackerError("Rate limited — retrying later", rate_limited=True)
     if response.status_code != 200:
         raise TrackerError(f"API error: {response.status_code}")
 
-    try:
-        data = response.json()
-    except json.JSONDecodeError:
-        raise TrackerError("Invalid API response")
-    if not isinstance(data, dict):
+    data = response_json(response)
+    if data is None:
         raise TrackerError("Invalid API response")
 
     session = _bucket(data, "five_hour", "Current Session")

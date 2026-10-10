@@ -65,7 +65,6 @@ KCM.SimpleKCM {
         QQC2.SpinBox {
             id: refreshSpinBox
             Kirigami.FormData.label: i18nc("@label:spinbox", "Refresh interval (minutes):")
-            // Keep the "from:" key — a bare value here is a QML syntax error that blanks the whole page
             from: 1
             to: 60
             stepSize: 1

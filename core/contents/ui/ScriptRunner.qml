@@ -14,8 +14,8 @@ PlasmaSupport.DataSource {
     // e.g. run("python3", "fetch_usage.py", ["--cached"])
     function run(interpreter, script, args) {
         var command = interpreter + " " + quote(path(script))
-        for (var i = 0; i < (args || []).length; i++) {
-            command += " " + quote(args[i])
+        for (var arg of args || []) {
+            command += " " + quote(arg)
         }
         connectSource(command)
     }

@@ -89,7 +89,7 @@ This removes the whole app: every tracker's widget, the app's data in `~/.local/
 
 ## How it works
 
-Every tracker's widget runs the same engine, in [`core/`](core/). On each refresh it runs the tracker's `fetch_usage.py`, which signs in with the service's own CLI credentials and returns usage in one common shape: limits grouped into bars, a percentage for the panel, and optionally extra usage — see [tracker_common.py](core/contents/code/tracker_common.py). `tracker_common.py` handles everything trackers share: caching, daily history, falling back to the cache when rate limited, and error reporting. The engine draws the panel icon, popup, and settings from that data alone.
+Every tracker's widget runs the same engine, in [`core/`](core/). On each refresh it runs the tracker's `fetch_usage.py`, which fetches your usage through the service's own sign-in (see the table above) and returns it in one common shape: limits grouped into bars, a percentage for the panel, and optionally extra usage — see [tracker_common.py](core/contents/code/tracker_common.py). `tracker_common.py` handles everything trackers share: caching, daily history, falling back to the cache when rate limited, and error reporting. The engine draws the panel icon, popup, and settings from that data alone.
 
 The app keeps its data in `~/.local/share/kde-ai-usage-trackers/`: a folder per tracker with its cached usage (shown instantly at startup) and daily history, plus the shared update-check cache.
 
@@ -125,7 +125,7 @@ release.sh          tags and publishes a release
    ```
 
    Add `"X-Tracker-ExtraUsage": true` if its data can include extra (paid) usage, and `"X-Tracker-IconFile"` to install an icon image shipped in the tracker's folder.
-2. Add `trackers/<name>/contents/code/fetch_usage.py`: define `fetch()`, returning usage in the common shape described in [tracker_common.py](core/contents/code/tracker_common.py), and end with `run(fetch)`. Raise `TrackerError` for anything to show the user, with `not_logged_in=True` when they need to sign in.
+2. Add `trackers/<name>/contents/code/fetch_usage.py`: define `fetch()`, returning usage in the common shape described in [tracker_common.py](core/contents/code/tracker_common.py), and end with `run(fetch)`. Raise `TrackerError` for anything to show the user, with `not_logged_in=True` when they need to sign in, or `rate_limited=True` when the service is rate limiting you, so the last cached usage is shown instead.
 3. Run `./install.sh`. Installing, updating, and uninstalling pick up the new tracker on their own.
 
 ## Development

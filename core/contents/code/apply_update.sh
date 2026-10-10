@@ -25,22 +25,22 @@ fi
 
 command -v kpackagetool6 &>/dev/null || fail "kpackagetool6 not found"
 
-TMPDIR=$(mktemp -d) || fail "Could not create temp directory"
-trap 'rm -rf "$TMPDIR"' EXIT
+DOWNLOAD_DIR=$(mktemp -d) || fail "Could not create temp directory"
+trap 'rm -rf "$DOWNLOAD_DIR"' EXIT
 
 URL="https://github.com/$REPO/archive/refs/tags/$TAG.tar.gz"
 
 if command -v curl &>/dev/null; then
-    curl -fsSL "$URL" | tar xz -C "$TMPDIR" --strip-components=1 || fail "Download failed"
+    curl -fsSL "$URL" | tar xz -C "$DOWNLOAD_DIR" --strip-components=1 || fail "Download failed"
 elif command -v wget &>/dev/null; then
-    wget -qO- "$URL" | tar xz -C "$TMPDIR" --strip-components=1 || fail "Download failed"
+    wget -qO- "$URL" | tar xz -C "$DOWNLOAD_DIR" --strip-components=1 || fail "Download failed"
 else
     fail "curl or wget is required"
 fi
 
 # Verify we downloaded this app before running its installer: it must have
 # trackers, and every one of them must be in the app's namespace
-[ -f "$TMPDIR/install.sh" ] || fail "Downloaded release is missing install.sh"
+[ -f "$DOWNLOAD_DIR/install.sh" ] || fail "Downloaded release is missing install.sh"
 
 python3 -c '
 import glob, json, sys
@@ -51,8 +51,8 @@ try:
 except Exception:
     sys.exit(1)
 sys.exit(0 if ids and all(i.startswith(namespace + ".") for i in ids) else 1)
-' "$TMPDIR" "$APP_NAMESPACE" || fail "Downloaded release is not AI Usage Tracker"
+' "$DOWNLOAD_DIR" "$APP_NAMESPACE" || fail "Downloaded release is not AI Usage Tracker"
 
-OUTPUT=$(bash "$TMPDIR/install.sh" 2>&1) || fail "$OUTPUT"
+OUTPUT=$(bash "$DOWNLOAD_DIR/install.sh" 2>&1) || fail "$OUTPUT"
 
 printf '{"success": true, "version": %s}\n' "$(printf '%s' "${TAG#v}" | json_string)"

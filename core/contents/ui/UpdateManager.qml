@@ -100,10 +100,6 @@ Item {
         onNewData: function (source, data) {
             disconnectSource(source)
         }
-
-        function exec(cmd) {
-            connectSource(cmd)
-        }
     }
 
     // Check GitHub for a newer release. A manual check runs even with automatic checks turned off,
@@ -142,7 +138,7 @@ Item {
         onTriggered: updater.updateNotice = ""
     }
 
-    // Download the latest release and run its installer, which upgrades every widget
+    // Download the latest release and run its installer, which upgrades the whole app
     function installUpdate() {
         if (updateState === "installing" || latestTag === "") return
 
@@ -166,7 +162,7 @@ Item {
 
     // Detached so the new shell survives the current one being replaced
     function restartPlasma() {
-        plasmaRestarter.exec("setsid -f plasmashell --replace")
+        plasmaRestarter.connectSource("setsid -f plasmashell --replace")
     }
 
     // Periodic update check — the script only hits GitHub once a day, this just re-reads its cache

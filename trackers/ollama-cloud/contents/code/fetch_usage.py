@@ -5,15 +5,15 @@ The server (0.40.1 or later) relays /api/balance and /api/me to ollama.com, sign
 account it's signed into, so the tracker needs no credentials of its own.
 """
 
-import json
 import os
 import re
 from typing import Any
 
-from tracker_common import TrackerError, requests, run
+from tracker_common import TrackerError, requests, response_json, run
 
 # Where the ollama CLI finds the server unless OLLAMA_HOST says otherwise
-DEFAULT_HOST = "127.0.0.1:11434"
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 11434
 # The first release whose server relays /api/balance
 MIN_VERSION = "0.40.1"
 
@@ -31,7 +31,7 @@ def server_url() -> str:
     if "://" not in host:
         host = "http://" + host
         if not re.search(r":\d+$", host):
-            host += ":11434"
+            host += f":{DEFAULT_PORT}"
     return host
 
 
@@ -49,11 +49,7 @@ def _request(method: str, path: str) -> requests.Response:
 
 def _error_text(response: requests.Response) -> str:
     """The error message in an API error response, or "" if there is none."""
-    try:
-        data = response.json()
-    except json.JSONDecodeError:
-        return ""
-    error = data.get("error") if isinstance(data, dict) else None
+    error = (response_json(response) or {}).get("error")
     return error if isinstance(error, str) else ""
 
 
@@ -135,10 +131,11 @@ def _plan() -> str:
     """The account's plan, for the badge next to the popup title; "" if it's unavailable."""
     try:
         response = _request("POST", "/api/me")
-        data = response.json() if response.status_code == 200 else None
-    except (TrackerError, requests.exceptions.RequestException, json.JSONDecodeError):
+    except (TrackerError, requests.exceptions.RequestException):
         return ""
-    plan = data.get("plan") if isinstance(data, dict) else None
+    if response.status_code != 200:
+        return ""
+    plan = (response_json(response) or {}).get("plan")
     return plan[:1].upper() + plan[1:] if isinstance(plan, str) else ""
 
 
@@ -153,7 +150,7 @@ def fetch() -> dict[str, Any]:
     if response.status_code == 404:
         raise TrackerError(f"Update Ollama to {MIN_VERSION} or later")
     if response.status_code == 429:
-        raise TrackerError("Rate limited — using cached data", rate_limited=True)
+        raise TrackerError("Rate limited — retrying later", rate_limited=True)
     if response.status_code == 502:
         raise TrackerError("Ollama can't reach ollama.com")
     if response.status_code != 200:
@@ -164,11 +161,8 @@ def fetch() -> dict[str, Any]:
             else f"Ollama API error: {response.status_code}"
         )
 
-    try:
-        data = response.json()
-    except json.JSONDecodeError:
-        raise TrackerError("Invalid Ollama API response")
-    if not isinstance(data, dict):
+    data = response_json(response)
+    if data is None:
         raise TrackerError("Invalid Ollama API response")
 
     groups = parse_balance(data)

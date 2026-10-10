@@ -13,6 +13,7 @@ from tracker_common import (
     read_json,
     read_metadata,
     requests,
+    response_json,
 )
 
 REPO = "HuskyDevClub/kde-ai-usage-trackers"
@@ -46,7 +47,7 @@ def is_newer(latest: str, current: str) -> bool:
     if not latest_parts or not current_parts:
         return False
 
-    # Pad the shorter version with zeros so 26.3 > 26.2.1 compares correctly
+    # Pad the shorter version with zeros, so 26.3.0 isn't newer than 26.3
     length = max(len(latest_parts), len(current_parts))
     latest_padded = latest_parts + (0,) * (length - len(latest_parts))
     current_padded = current_parts + (0,) * (length - len(current_parts))
@@ -60,13 +61,12 @@ def local_version() -> str:
 
 def build_result(latest_tag: str, release_url: str, current: str) -> dict[str, Any]:
     """Build the result payload consumed by the QML frontend."""
-    latest = latest_tag.lstrip("vV")
     return {
         "currentVersion": current,
-        "latestVersion": latest,
+        "latestVersion": latest_tag.lstrip("vV"),
         "latestTag": latest_tag,
         "releaseUrl": release_url or RELEASES_PAGE_URL,
-        "updateAvailable": bool(latest_tag) and is_newer(latest_tag, current),
+        "updateAvailable": is_newer(latest_tag, current),
         "checkedAt": int(time.time()),
     }
 
@@ -99,38 +99,36 @@ def check_for_update(force: bool) -> dict[str, Any]:
             },
             timeout=10,
         )
-
-        # No releases published yet — nothing to update to
-        if response.status_code == 404:
-            return build_result("", "", current)
-
-        # Rate limited — fall back to whatever was cached
-        if response.status_code in (403, 429):
-            if cached.get("latestTag"):
-                return cached_result(cached, current)
-            return {"error": "GitHub rate limit reached"}
-
-        if response.status_code != 200:
-            return {"error": f"Update check failed: {response.status_code}"}
-
-        data = response.json()
-        tag = data.get("tag_name") or ""
-        if not tag:
-            return build_result("", "", current)
-
-        result = build_result(tag, data.get("html_url", ""), current)
-        atomic_write_json(CACHE_FILE, result)
-        return result
-
-    # Before RequestException, which requests' own JSONDecodeError also subclasses
-    except json.JSONDecodeError:
-        return {"error": "Invalid response from GitHub"}
     except requests.exceptions.Timeout:
         return {"error": "Update check timed out"}
     except requests.exceptions.ConnectionError:
         return {"error": "Could not reach GitHub"}
     except requests.exceptions.RequestException as e:
         return {"error": f"Update check failed: {e}"}
+
+    # No releases published yet — nothing to update to
+    if response.status_code == 404:
+        return build_result("", "", current)
+
+    # Rate limited — fall back to whatever was cached
+    if response.status_code in (403, 429):
+        if cached.get("latestTag"):
+            return cached_result(cached, current)
+        return {"error": "GitHub rate limit reached"}
+
+    if response.status_code != 200:
+        return {"error": f"Update check failed: {response.status_code}"}
+
+    data = response_json(response)
+    if data is None:
+        return {"error": "Invalid response from GitHub"}
+    tag = data.get("tag_name") or ""
+    if not tag:
+        return build_result("", "", current)
+
+    result = build_result(tag, data.get("html_url", ""), current)
+    atomic_write_json(CACHE_FILE, result)
+    return result
 
 
 def main() -> None:

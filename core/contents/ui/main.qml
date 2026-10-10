@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
@@ -81,13 +80,9 @@ PlasmoidItem {
     }
 
     // Opening the popup refreshes data that is older than the refresh interval
-    Connections {
-        target: root
-
-        function onExpandedChanged() {
-            if (root.expanded && isCacheStale()) {
-                fetchUsage()
-            }
+    onExpandedChanged: function (expanded) {
+        if (expanded && isCacheStale()) {
+            fetchUsage()
         }
     }
 

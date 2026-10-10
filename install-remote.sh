@@ -9,18 +9,18 @@ REPO="HuskyDevClub/kde-ai-usage-trackers"
 BRANCH="main"
 URL="https://github.com/$REPO/archive/refs/heads/$BRANCH.tar.gz"
 
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+DOWNLOAD_DIR=$(mktemp -d)
+trap 'rm -rf "$DOWNLOAD_DIR"' EXIT
 
 echo "Downloading AI Usage Tracker..."
 
 if command -v curl &>/dev/null; then
-    curl -fsSL "$URL" | tar xz -C "$TMPDIR" --strip-components=1
+    curl -fsSL "$URL" | tar xz -C "$DOWNLOAD_DIR" --strip-components=1
 elif command -v wget &>/dev/null; then
-    wget -qO- "$URL" | tar xz -C "$TMPDIR" --strip-components=1
+    wget -qO- "$URL" | tar xz -C "$DOWNLOAD_DIR" --strip-components=1
 else
     echo "Error: curl or wget is required" >&2
     exit 1
 fi
 
-bash "$TMPDIR/install.sh"
+bash "$DOWNLOAD_DIR/install.sh"

@@ -15,13 +15,14 @@ fetch() returns the tracker's usage in the app's common shape, or raises Tracker
                         "title": "5-Hour Limit",
                         "used": 42.0,                       # percent of the limit
                         "resetsAt": "2026-01-01T00:00:00Z", # optional
-                        "description": "",                  # optional
                         "disabled": False,                  # optional: limit reached
+                        "description": "",                  # optional: replaces "Limit reached"
                     },
                 ],
             },
         ],
-        "extra": {"used": 12.5, "limit": 50.0, "utilization": 25.0},  # optional: paid usage beyond the plan
+        # optional: paid usage beyond the plan, in dollars; a limit of 0 means no cap
+        "extra": {"used": 12.5, "limit": 50.0, "utilization": 25.0},
     }
 
 run() adds history, error, notLoggedIn and rateLimited, caches the result, and prints it
@@ -34,7 +35,7 @@ import re
 import sys
 import tempfile
 from collections.abc import Callable
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 try:
@@ -67,12 +68,17 @@ __all__ = [
     "read_json",
     "read_metadata",
     "requests",
+    "response_json",
     "run",
 ]
 
 
 class TrackerError(Exception):
-    """A fetch failure the widget should report, with the message shown to the user."""
+    """A fetch failure the widget should report, with the message shown to the user.
+
+    not_logged_in shows it as a sign-in reminder rather than an error. rate_limited makes
+    run() serve the last cached result instead, if there is one, and the widget back off.
+    """
 
     def __init__(
         self, message: str, not_logged_in: bool = False, rate_limited: bool = False
@@ -92,9 +98,12 @@ def num(value: Any, default: float = 0) -> float:
     return float(default)
 
 
-def atomic_write_json(filepath: str, data: Any, mode: int = 0o600) -> bool:
+def atomic_write_json(filepath: str, data: Any) -> bool:
     """Write JSON to a temp file and rename it into place, so the file is never left
-    half-written. Returns whether it succeeded."""
+    half-written. Returns whether it succeeded.
+
+    mkstemp() creates the file readable only by the user, as credentials files need.
+    """
     tmp_path = None
     try:
         dir_path = os.path.dirname(filepath)
@@ -102,7 +111,6 @@ def atomic_write_json(filepath: str, data: Any, mode: int = 0o600) -> bool:
         fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
         with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2)
-        os.chmod(tmp_path, mode)
         os.rename(tmp_path, filepath)
         return True
     except OSError:
@@ -124,6 +132,16 @@ def read_json(filepath: str) -> dict[str, Any]:
         return {}
 
 
+def response_json(response: requests.Response) -> dict[str, Any] | None:
+    """The JSON object in a response's body, or None if the body isn't one."""
+    try:
+        data = response.json()
+    # requests' own error, a json.JSONDecodeError only when simplejson isn't installed
+    except requests.exceptions.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def read_metadata() -> dict[str, Any]:
     """The installed package's metadata.json, or an empty dict if it can't be read."""
     return read_json(os.path.join(PACKAGE_DIR, "metadata.json"))
@@ -139,34 +157,33 @@ def tracker_data_dir() -> str:
 def record_history(data_dir: str, percent: float) -> list[dict[str, Any]]:
     """Record today's peak usage and return the last HISTORY_DAYS days for the daily chart."""
     history_file = os.path.join(data_dir, "history.json")
-    history = {date: num(peak) for date, peak in read_json(history_file).items()}
+    today = datetime.now().astimezone().date()
+    # Compared as dates, not timestamps, since a day that starts or ends daylight saving
+    # time isn't 24 hours long
+    oldest = today - timedelta(days=HISTORY_DAYS - 1)
 
-    now = datetime.now().astimezone()
-    today = now.strftime("%Y-%m-%d")
+    history: dict[date, float] = {}
+    for key, peak in read_json(history_file).items():
+        try:
+            day = date.fromisoformat(key)
+        except ValueError:
+            continue  # Skip corrupted date entries
+        if day >= oldest:
+            history[day] = num(peak)
     history[today] = max(percent, history.get(today, 0.0))
 
-    # Prune entries older than HISTORY_DAYS
-    cutoff = now.timestamp() - HISTORY_DAYS * 86400
-    pruned: dict[str, float] = {}
-    for date, peak in history.items():
-        try:
-            if datetime.strptime(date, "%Y-%m-%d").astimezone().timestamp() >= cutoff:
-                pruned[date] = peak
-        except ValueError:
-            pass  # Skip corrupted date entries
-
-    atomic_write_json(history_file, pruned)
+    atomic_write_json(
+        history_file, {day.isoformat(): peak for day, peak in history.items()}
+    )
 
     day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return [
         {
-            "day": day_names[
-                datetime.strptime(date, "%Y-%m-%d").astimezone().weekday()
-            ],
-            "date": date,
-            "percent": pruned[date],
+            "day": day_names[day.weekday()],
+            "date": day.isoformat(),
+            "percent": history[day],
         }
-        for date in sorted(pruned)
+        for day in sorted(history)
     ]
 
 
