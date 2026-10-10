@@ -50,6 +50,28 @@ for id in "${LEGACY_IDS[@]}"; do
         REPLACED_LEGACY=true
     fi
 done
+
+# The old Claude widget kept the daily chart's history as {date: {"session": peak, ...}}.
+# Carry its session peaks into the Claude tracker's history.json ({date: peak}) before
+# its data folder goes, so upgrading doesn't wipe the chart.
+LEGACY_HISTORY="$HOME/.local/share/claude-usage-tracker/history.json"
+if [ -f "$LEGACY_HISTORY" ]; then
+    python3 - "$REPO_DIR/core/contents/code" "$LEGACY_HISTORY" <<'EOF' || echo "Warning: couldn't carry over the Claude usage history"
+import os
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from tracker_common import APP_DATA_DIR, atomic_write_json, num, read_json
+
+history_file = os.path.join(APP_DATA_DIR, "claude", "history.json")
+history = {date: num(peak) for date, peak in read_json(history_file).items()}
+for date, entry in read_json(sys.argv[2]).items():
+    if isinstance(entry, dict):
+        history[date] = max(num(entry.get("session")), history.get(date, 0.0))
+if not atomic_write_json(history_file, history):
+    sys.exit(1)
+EOF
+fi
 for dir in "${LEGACY_DATA_DIRS[@]}"; do
     rm -rf "$HOME/.local/share/$dir"
 done
@@ -58,7 +80,7 @@ rm -f "$LEGACY_ICON"
 for package in "$STAGE"/*/; do
     package="${package%/}"
     id=$(metadata "$package" KPlugin.Id)
-    name=$(metadata "$package" KPlugin.Name)
+    name="$(metadata "$package" KPlugin.Name) — $(metadata "$package" X-Tracker-Name)"
 
     if grep -qx "$id" <<< "$INSTALLED"; then
         echo "Upgrading $name..."

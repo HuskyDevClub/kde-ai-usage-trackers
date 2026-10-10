@@ -12,6 +12,7 @@
             "desktop"
         ],
         "License": "GPL-3.0",
+        "Name": "AI Usage Tracker",
         "Version": "26.3",
         "Website": "https://github.com/HuskyDevClub/kde-ai-usage-trackers"
     },

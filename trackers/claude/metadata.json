@@ -2,8 +2,7 @@
     "KPlugin": {
         "Description": "Track your Claude usage limits and quotas",
         "Icon": "kde-ai-usage-trackers-claude",
-        "Id": "com.github.huskydevclub.kde-ai-usage-trackers.claude",
-        "Name": "AI Usage Tracker — Claude"
+        "Id": "com.github.huskydevclub.kde-ai-usage-trackers.claude"
     },
     "X-Tracker-Name": "Claude",
     "X-Tracker-IconFile": "screenshots/preview.png",

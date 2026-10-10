@@ -5,7 +5,7 @@
 # A package is core/ with trackers/<tracker>/ laid on top, so a tracker file
 # replaces the core file at the same path. The two metadata.json files are
 # merged instead: app-wide fields come from core/, the tracker's own fields
-# (ID, name, icon, X-Tracker-*) from the tracker.
+# (ID, description, icon, X-Tracker-*) from the tracker.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"

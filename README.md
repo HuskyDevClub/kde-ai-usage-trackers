@@ -117,8 +117,7 @@ release.sh          tags and publishes a release
        "KPlugin": {
            "Description": "Track your <Name> usage limits and quotas",
            "Icon": "<icon name>",
-           "Id": "com.github.huskydevclub.kde-ai-usage-trackers.<name>",
-           "Name": "AI Usage Tracker — <Name>"
+           "Id": "com.github.huskydevclub.kde-ai-usage-trackers.<name>"
        },
        "X-Tracker-Name": "<Name>"
    }
