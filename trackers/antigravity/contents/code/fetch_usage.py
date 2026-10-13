@@ -286,6 +286,13 @@ def parse_summary(summary: dict) -> list[dict[str, Any]]:
             parse_bucket(b) for b in group.get("buckets") or [] if isinstance(b, dict)
         ]
         buckets.sort(key=lambda b: WINDOW_ORDER.get(b["title"], len(WINDOW_ORDER)))
+        # Once the weekly limit is used up, the API flags the pool's other limits with a
+        # "You have hit your weekly limit" notice that the full weekly bar already says
+        if any(
+            b["title"] == WINDOW_TITLES["weekly"] and b["used"] >= 100 for b in buckets
+        ):
+            for b in buckets:
+                b.pop("disabled", None)
         groups.append(
             {
                 "name": str(group.get("displayName") or "Models"),

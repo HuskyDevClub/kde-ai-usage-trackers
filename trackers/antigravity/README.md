@@ -5,7 +5,7 @@ The Antigravity tracker in [AI Usage Tracker](../../README.md) shows how much of
 ## What it shows
 
 - **One section per quota pool** — Gemini models, and 3rd-party models such as Claude and GPT
-- **5-hour and weekly limits** in each pool, with countdowns to when they reset, and a notice when a limit has been reached
+- **5-hour and weekly limits** in each pool, with countdowns to when they reset, and a notice when a limit has been reached (none once the weekly limit is used up, since its full bar says so)
 - Your plan (tier) next to the title
 - The panel and the daily chart both follow your busiest limit across every pool
 
