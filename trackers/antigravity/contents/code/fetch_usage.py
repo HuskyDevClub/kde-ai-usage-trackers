@@ -23,7 +23,8 @@ from tracker_common import (
     run,
 )
 
-API_BASE = "https://cloudcode-pa.googleapis.com/v1internal"
+# The host agy uses, which reports separate pools such as Gemini 4 Argon on paid Pro plans
+API_BASE = "https://daily-cloudcode-pa.googleapis.com/v1internal"
 OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
 OAUTH_CLIENT_ID = (
     "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
@@ -31,7 +32,8 @@ OAUTH_CLIENT_ID = (
 OAUTH_CLIENT_SECRET = "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"
 KEYRING_SERVICE = "gemini"
 KEYRING_USER = "antigravity"
-USER_AGENT = "antigravity"
+# The API only lists the Gemini pools for agy 1.4.0 or later, so ask as agy 1.4.1 does
+USER_AGENT = "antigravity/cli/1.4.1"
 # Queried when the account has no project of its own and agy hasn't cached one
 DEFAULT_PROJECT = "aicode-consumers"
 SESSION_EXPIRED = "Antigravity session expired. Run agy to log in again"
